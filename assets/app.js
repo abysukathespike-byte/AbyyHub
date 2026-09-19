@@ -1750,7 +1750,16 @@ function toggleMaintenanceDev(el) {
 
 // ===================== INIT =====================
 window.onload = function () {
+    showLoadingScreen();
     const saved = localStorage.getItem('abyyhub_user');
+    const autoHideTimeout = setTimeout(() => {
+        hideLoadingScreen();
+        if (!currentUser) {
+            document.getElementById('auth-page').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+        }
+    }, 5000);
+    
     if (saved) {
         try {
             const u = JSON.parse(saved);
@@ -1759,13 +1768,36 @@ window.onload = function () {
                     const d = s.val();
                     if (!d.banned && d.password === u.password) { 
                         currentUser = d; 
-                        showLoadingScreen();
-                        setTimeout(() => { loadApp(); hideLoadingScreen(); }, 1200);
+                        clearTimeout(autoHideTimeout);
+                        setTimeout(() => { loadApp(); hideLoadingScreen(); }, 800);
                         return; 
                     }
                 }
                 localStorage.removeItem('abyyhub_user');
-            }).catch(() => {});
-        } catch (e) { localStorage.removeItem('abyyhub_user'); }
+                clearTimeout(autoHideTimeout);
+                hideLoadingScreen();
+                document.getElementById('auth-page').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+            }).catch(err => {
+                console.error('DB Error:', err);
+                clearTimeout(autoHideTimeout);
+                localStorage.removeItem('abyyhub_user');
+                hideLoadingScreen();
+                document.getElementById('auth-page').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+                showAuthError('Tidak bisa terhubung ke server. Coba lagi.');
+            });
+        } catch (e) { 
+            clearTimeout(autoHideTimeout);
+            localStorage.removeItem('abyyhub_user');
+            hideLoadingScreen();
+            document.getElementById('auth-page').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+        }
+    } else {
+        clearTimeout(autoHideTimeout);
+        hideLoadingScreen();
+        document.getElementById('auth-page').style.display = 'flex';
+        document.getElementById('app').style.display = 'none';
     }
 };
